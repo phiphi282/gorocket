@@ -1,11 +1,11 @@
 package rest
 
 import (
-	"net/http"
-	"net/url"
 	"bytes"
 	"errors"
-	"github.com/detached/gorocket/api"
+	"github.com/pyinx/gorocket/api"
+	"net/http"
+	"net/url"
 )
 
 type logoutResponse struct {
@@ -38,7 +38,7 @@ func (c *Client) Login(credentials api.UserCredentials) error {
 	}
 
 	if response.Status == "success" {
-		c.auth = &authInfo{id:response.Data.UserId, token:response.Data.Token}
+		c.auth = &authInfo{id: response.Data.UserId, token: response.Data.Token}
 		return nil
 	} else {
 		return errors.New("Response status: " + response.Status)
