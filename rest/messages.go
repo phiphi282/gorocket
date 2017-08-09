@@ -101,3 +101,28 @@ func (c *Client) GetMuliMessages(channels []api.Channel) chan []api.Message {
 	}()
 	return msgChan
 }
+
+func (c *Client) GetAllMessages() chan []api.Message {
+	channels, _ := c.GetJoinedChannels()
+	msgChan := make(chan []api.Message, 1024)
+	go func() {
+		msgMap := make(map[string]string)
+		for {
+			for _, channel := range channels {
+				lastTime := msgMap[channel.Name]
+				msg, err := c.GetMessagesOnce(&channel, lastTime)
+				if err != nil {
+					log.Printf("ERROR: get message from channel %s err: %s\n", channel.Name, err)
+				} else {
+					if len(msg) != 0 {
+						msgMap[channel.Name] = msg[0].Timestamp
+						msgChan <- msg
+					}
+				}
+			}
+			time.Sleep(200 * time.Microsecond)
+			channels, _ = c.GetJoinedChannels()
+		}
+	}()
+	return msgChan
+}
