@@ -63,20 +63,41 @@ func (c *Client) GetMessages(channel *api.Channel, lastTime string, msgChan chan
 		if lastTime != "" {
 			u = fmt.Sprintf("%s&oldest=%s", u, lastTime)
 		}
-
 		request, _ := http.NewRequest("GET", u, nil)
 		response := new(messagesResponse)
 
 		if err := c.doRequest(request, response); err != nil {
-			log.Printf("get message from channel err: %s\n", err)
+			log.Printf("ERROR: get message from channel err: %s\n", err)
 			time.Sleep(200 * time.Microsecond)
 			continue
 		}
 		if len(response.Messages) != 0 {
-			log.Printf("---------: %s\n", response.Messages[0].Timestamp)
 			lastTime = response.Messages[0].Timestamp
 			msgChan <- response.Messages
 		}
 		time.Sleep(200 * time.Microsecond)
 	}
+}
+
+func (c *Client) GetMuliMessages(channels []api.Channel) chan []api.Message {
+	msgChan := make(chan []api.Message, len(channels))
+	go func() {
+		msgMap := make(map[string]string)
+		for {
+			for _, channel := range channels {
+				lastTime := msgMap[channel.Name]
+				msg, err := c.GetMessagesOnce(&channel, lastTime)
+				if err != nil {
+					log.Printf("ERROR: get message from channel %s err: %s\n", channel.Name, err)
+				} else {
+					if len(msg) != 0 {
+						msgMap[channel.Name] = msg[0].Timestamp
+						msgChan <- msg
+					}
+				}
+			}
+			time.Sleep(200 * time.Microsecond)
+		}
+	}()
+	return msgChan
 }
