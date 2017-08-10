@@ -7,6 +7,7 @@ import (
 	"html"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -27,6 +28,7 @@ type messageResponse struct {
 //
 // https://rocket.chat/docs/developer-guides/rest-api/chat/postmessage
 func (c *Client) Send(channel *api.Channel, msg string) error {
+	msg = strings.Replace(msg, "\n", "\\n", -1)
 	body := fmt.Sprintf(`{ "channel": "%s", "text": "%s"}`, channel.Name, html.EscapeString(msg))
 	request, _ := http.NewRequest("POST", c.getUrl()+"/api/v1/chat.postMessage", bytes.NewBufferString(body))
 
