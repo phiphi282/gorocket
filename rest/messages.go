@@ -3,12 +3,13 @@ package rest
 import (
 	"bytes"
 	"fmt"
-	"github.com/pyinx/gorocket/api"
 	"html"
 	"log"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/pyinx/gorocket/api"
 )
 
 type messagesResponse struct {
@@ -43,6 +44,23 @@ func (c *Client) Send(channel *api.Channel, msg string) error {
 // https://rocket.chat/docs/developer-guides/rest-api/channels/history
 func (c *Client) GetMessagesOnce(channel *api.Channel, lastTime string) ([]api.Message, error) {
 	u := fmt.Sprintf("%s/api/v1/channels.history?roomId=%s", c.getUrl(), channel.Id)
+
+	if lastTime != "" {
+		u = fmt.Sprintf("%s&oldest=%s", u, lastTime)
+	}
+
+	request, _ := http.NewRequest("GET", u, nil)
+	response := new(messagesResponse)
+
+	if err := c.doRequest(request, response); err != nil {
+		return nil, err
+	}
+
+	return response.Messages, nil
+}
+
+func (c *Client) GetImsOnce(channel *api.Channel, lastTime string) ([]api.Message, error) {
+	u := fmt.Sprintf("%s/api/v1/im.history?roomId=%s", c.getUrl(), channel.Id)
 
 	if lastTime != "" {
 		u = fmt.Sprintf("%s&oldest=%s", u, lastTime)
@@ -106,6 +124,9 @@ func (c *Client) GetMuliMessages(channels []api.Channel) chan []api.Message {
 
 func (c *Client) GetAllMessages() chan []api.Message {
 	channels, _ := c.GetJoinedChannels()
+	ims, err := c.GetJoinedIMs()
+	log.Println(ims)
+	log.Println(err)
 	msgChan := make(chan []api.Message, 1024)
 	go func() {
 		msgMap := make(map[string]string)
@@ -122,8 +143,23 @@ func (c *Client) GetAllMessages() chan []api.Message {
 					}
 				}
 			}
+			for _, im := range ims {
+				lastTime := msgMap[im.Id]
+				msg, err := c.GetImsOnce(&im, lastTime)
+				if err != nil {
+					log.Printf("ERROR: get message from im %s err: %s\n", im.UserNames[1], err)
+				} else {
+					if len(msg) != 0 {
+						fmt.Println(msg[0].Timestamp)
+						msgMap[im.Id] = msg[0].Timestamp
+						msgChan <- msg
+					}
+				}
+			}
 			time.Sleep(200 * time.Microsecond)
 			channels, _ = c.GetJoinedChannels()
+			ims, err = c.GetJoinedIMs()
+			log.Println(err)
 		}
 	}()
 	return msgChan
