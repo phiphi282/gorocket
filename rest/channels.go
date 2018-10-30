@@ -2,6 +2,7 @@ package rest
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -89,4 +90,13 @@ func (c *Client) GetChannelInfoById(channelId string) (*api.Channel, error) {
 	}
 
 	return &response.Channel, nil
+}
+
+func (c *Client) SetChannelTopic(channel *api.Channel, topic string) error {
+	body, err := json.Marshal(map[string]string{"roomId": channel.Id, "topic": topic})
+	if err != nil {
+		return err
+	}
+	request, err := http.NewRequest("POST", c.getUrl()+"/api/v1/channels.setTopic", bytes.NewBuffer(body))
+	return c.doRequest(request, new(statusResponse))
 }
