@@ -1,8 +1,9 @@
 package rest
 
 import (
-	"github.com/pyinx/gorocket/api"
 	"net/http"
+
+	"github.com/phiphi282/gorocket/api"
 )
 
 type infoResponse struct {

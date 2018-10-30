@@ -3,8 +3,9 @@ package rest
 import (
 	"bytes"
 	"fmt"
-	"github.com/pyinx/gorocket/api"
 	"net/http"
+
+	"github.com/phiphi282/gorocket/api"
 )
 
 type channelsResponse struct {

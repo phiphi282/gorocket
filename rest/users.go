@@ -3,9 +3,10 @@ package rest
 import (
 	"bytes"
 	"errors"
-	"github.com/pyinx/gorocket/api"
 	"net/http"
 	"net/url"
+
+	"github.com/phiphi282/gorocket/api"
 )
 
 type logoutResponse struct {

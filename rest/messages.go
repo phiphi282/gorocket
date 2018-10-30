@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pyinx/gorocket/api"
+	"github.com/phiphi282/gorocket/api"
 )
 
 type messagesResponse struct {
@@ -133,6 +133,9 @@ func (c *Client) GetAllMessages() chan []api.Message {
 		for {
 			for _, channel := range channels {
 				lastTime := msgMap[channel.Name]
+				if lastTime == "" {
+					lastTime = time.Now().Add(time.Duration(-2) * time.Hour).Format("2006-01-02T15:04:05.999Z")
+				}
 				msg, err := c.GetMessagesOnce(&channel, lastTime)
 				if err != nil {
 					log.Printf("ERROR: get message from channel %s err: %s\n", channel.Name, err)
@@ -140,26 +143,31 @@ func (c *Client) GetAllMessages() chan []api.Message {
 					if len(msg) != 0 {
 						msgMap[channel.Name] = msg[0].Timestamp
 						msgChan <- msg
+					} else {
+						msgMap[channel.Name] = lastTime
 					}
 				}
 			}
 			for _, im := range ims {
 				lastTime := msgMap[im.Id]
+				if lastTime == "" {
+					lastTime = time.Now().Add(time.Duration(-2) * time.Hour).Format("2006-01-02T15:04:05.999Z")
+				}
 				msg, err := c.GetImsOnce(&im, lastTime)
 				if err != nil {
 					log.Printf("ERROR: get message from im %s err: %s\n", im.UserNames[1], err)
 				} else {
 					if len(msg) != 0 {
-						fmt.Println(msg[0].Timestamp)
 						msgMap[im.Id] = msg[0].Timestamp
 						msgChan <- msg
+					} else {
+						msgMap[im.Id] = lastTime
 					}
 				}
 			}
 			time.Sleep(200 * time.Microsecond)
 			channels, _ = c.GetJoinedChannels()
 			ims, err = c.GetJoinedIMs()
-			log.Println(err)
 		}
 	}()
 	return msgChan

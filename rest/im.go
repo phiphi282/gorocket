@@ -3,7 +3,7 @@ package rest
 import (
 	"net/http"
 
-	"github.com/pyinx/gorocket/api"
+	"github.com/phiphi282/gorocket/api"
 )
 
 type imsResponse struct {
